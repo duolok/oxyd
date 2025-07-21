@@ -20,7 +20,6 @@ Cilj ovog projekta je razvoj interaktivnog sistemskog monitora za Linux, napisan
 - Interaktivno upravljanje procesima (npr. slanje signala kill, promene prioriteta, suspendovanje i nastavak izvršavanja)
 - Sortiranje procesa
 - Modularnost i proširivost putem jasno definisanih komponenti
-- Eksport metrika u formate pogodne za dalju analizu (CSV/JSON)
 - Vizualizaciju performansi direktno u terminalu, u obliku grafikona, tabela, labela...
 
 ## Arhitektura
