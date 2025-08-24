@@ -41,7 +41,7 @@ ovaj projekat je zamišljen da bude _uproscena_ verzija tih alata. Verovatno će
 
 ## Biblioteke i vizuelizacije
 
-Za vizuelizaciju u terminalu bi se koristila [ratatui](https://docs.rs/ratatui/latest/ratatui/) biblioteka, a vizuelizacije će obuhvatati iskorišćenje CPU po threadovima, iskorišćenje diska, memorije, temperatura i uvid u procese (pocetna verzija).
+Za vizuelizaciju u terminalu bi se koristila [ratatui](https://ratatui.rs/) biblioteka, a vizuelizacije će obuhvatati iskorišćenje CPU po threadovima, iskorišćenje diska, memorije, temperatura i uvid u procese (pocetna verzija).
 
 ## Buduca unapredjenja
 
