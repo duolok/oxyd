@@ -33,6 +33,16 @@ Neka pocetna arhitektura bi sastojala od nekoliko celina:
 
 Arhitektura aplikacije bi trebala da bude takva da se lako mogu dodati nove ekstenzije.
 
+## Srodni alati
+
+Ovaj projekat bi trebao da bude mešavina alata kao što su `bottom`, `btop`, `ytop`, `htop` i slični. Ideja je bila da korisnik može da vidi
+koji proces zauzima najviše resursa i po potrebi da bude u mogućnosti da isključi taj proces. Međutim, kako neka od rešenja već poseduju tu funkcionalnost,
+ovaj projekat je zamišljen da bude _uproscena_ verzija tih alata. Verovatno će biti podržane neke druge funkcionalnosti iz [#Buduća unapređenja](#buduca-unapredjenja).
+
+## Biblioteke i vizuelizacije
+
+Za vizuelizaciju u terminalu bi se koristila [ratatui](https://docs.rs/ratatui/latest/ratatui/) biblioteka, a vizuelizacije će obuhvatati iskorišćenje CPU po threadovima, iskorišćenje diska, memorije, temperatura i uvid u procese (pocetna verzija).
+
 ## Buduca unapredjenja
 
 Posto je softver ekstenzibilan, postoji mnogo ideja za buduca unapredjenja. Ideja je da moze lako da se integrise za rad sa drugim aplikacijama. Neka od mogucih unapredjenja:
