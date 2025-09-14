@@ -1,6 +1,47 @@
 [package]
 name = "oxyd"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+oxyd-core = { path = "src/oxyd-core" }
+oxyd-domain = { path = "src/oxyd-domain" }
+oxyd-collectors = { path = "src/oxyd-collectors" }
+oxyd-process-manager = { path = "src/oxyd-process-manager" }
+oxyd-tui = { path = "src/oxyd-tui" }
+oxyd-cli = { path = "src/oxyd-cli" }
+
+[workspace]
+members = [
+    "src/oxyd-core",
+    "src/oxyd-domain",
+    "src/oxyd-collectors",
+    "src/oxyd-process-manager",
+    "src/oxyd-tui",
+    "src/oxyd-cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["duolok"]
+repository = "https://github.com/duolok/oxyd"
+
+[workspace.dependencies]
+tokio = { version = "1.41", features = ["full"] }
+async-trait = "0.1"
+thiserror = "1.0"
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+sysinfo = "0.32"
+procfs = "0.17"
+ratatui = "0.29"
+crossterm = "0.28"
+chrono = "0.4"
+once_cell = "1.20"
+clap = { version = "4.5", features = ["derive"] }
