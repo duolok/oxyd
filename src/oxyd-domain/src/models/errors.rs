@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Erorr, Debug)]
+#[derive(Error, Debug)]
 pub enum OxydError {
     #[error("Collector  error: {0}")]
     Collector(#[from] CollectorError),
@@ -14,11 +14,8 @@ pub enum OxydError {
     #[error("Configuration error: {0}")]
     ConfigError(#[from] ConfigError),
 
-    #[error("UI error: {0}")]
-    UIError(#[from] UIError),
-
     #[error("IO error: {0}")]
-    IOError(#[from] IOError),
+    IOError(#[from] std::io::Error),
 
     #[error("Unknown error: {0}")]
     Unknown(String),
@@ -42,6 +39,7 @@ pub enum CollectorError {
     Timeout(String),
 }
 
+#[derive(Error, Debug)]
 pub enum ProcessError {
     #[error("Process {0} not found")]
     NotFound(u32),
