@@ -1,9 +1,11 @@
 [package]
 name = "oxyd-domain"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
-serde.workspace = true
-async-trait.workspace = true
-chrono.workspace = true
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
