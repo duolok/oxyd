@@ -32,7 +32,7 @@ pub enum LogLevel {
 pub struct CollectorConfig {
     pub enabled_collectors: Vec<String>,
     pub cpu: CpuCollectorConfig,
-    pub memory: MemoryCollelctorConfig,
+    pub memory: MemoryCollectorConfig,
     pub disk: DiskCollectorConfig,
     pub network: NetworkCollectorConfig,
     pub process: ProcessCollectorConfig,
