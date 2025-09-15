@@ -1,7 +1,11 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use super::{
+    SystemInfo, CpuCore, MemoryInfo, DiskInfo, DiskIoStats,
+    NetworkInterface, NetworkStats
+};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
     pub system_info: SystemInfo,
@@ -82,6 +86,4 @@ pub struct ProcessMetrics {
     pub sleeping_count: usize,
     pub stopped_count: usize,
     pub zombie_count: usize,
-    pub top_cpu_processes: Vec<Process>,
-    pub top_memory_processes: Vec<Process>,
 }
