@@ -8,7 +8,7 @@ pub enum OxydError {
     #[error("Process manager error: {0}")]
     ProcessManager(#[from] ProcessError),
 
-    #[error("Plugin erorr: {0}")]
+    #[error("Plugin error: {0}")]
     PluginError(#[from] PluginError),
 
     #[error("Configuration error: {0}")]
@@ -26,16 +26,16 @@ pub enum CollectorError {
     #[error("Failed to read system information: {0}")]
     SystemInfoError(String),
 
-    #[error("Failed to access {0}, {1}")]
+    #[error("Failed to access {0}: {1}")]
     AccessError(String, String),
 
-    #[error("Parse error for {0}, {1}")]
+    #[error("Parse error for {0}: {1}")]
     ParseError(String, String),
 
     #[error("Collector {0} not available on this system")]
     NotAvailable(String),
 
-    #[error("Timeout whiel collecting {0}")]
+    #[error("Timeout while collecting {0}")]
     Timeout(String),
 }
 
@@ -50,7 +50,7 @@ pub enum ProcessError {
     #[error("Invalid signal: {0}")]
     InvalidSignal(String),
 
-    #[error("Failed to {0} process {1}; {2}")]
+    #[error("Failed to {0} process {1}: {2}")]
     ActionFailed(String, u32, String),
 }
 
