@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+oxyd-domain = { path = "../oxyd-domain" }  
+async-trait = { workspace = true }
+chrono = { workspace = true }
 serde.workspace = true
