@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -5,8 +7,8 @@ pub struct Config {
     pub collectors: CollectorConfig,
     pub ui: UIConfig,
     pub process_manager: ProcessManagerConfig,
-    pub pluings: PluginConfig,
-    pub aalerts: AlertConfig,
+    pub plugins: PluginConfig,
+    pub alerts: AlertConfig,
 }
 
 #[derive(Debug, Clone,Serialize, Deserialize)]
@@ -28,9 +30,9 @@ pub enum LogLevel {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CollectorConfig {
-    pub enaabled_collectors: Vec<String>,
+    pub enabled_collectors: Vec<String>,
     pub cpu: CpuCollectorConfig,
-    pub memory: MemoryColelctorConfig,
+    pub memory: MemoryCollelctorConfig,
     pub disk: DiskCollectorConfig,
     pub network: NetworkCollectorConfig,
     pub process: ProcessCollectorConfig,
@@ -44,7 +46,7 @@ pub struct CpuCollectorConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MemoryColelctorConfig {
+pub struct MemoryCollelctorConfig {
     pub enabled: bool,
 }
 
@@ -66,7 +68,7 @@ pub struct ProcessCollectorConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UiConfig {
+pub struct UIConfig {
     pub theme: Theme,
     pub refresh_rate_ms: u64,
     pub show_help_on_start: bool,
