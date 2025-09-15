@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Processs {
+pub struct Process {
     pub pid: u32,
     pub ppid: Option<u32>,
     pub name: String,
@@ -15,10 +15,10 @@ pub struct Processs {
     pub group: String,
     pub priority: i32,
     pub nice: i32,
-    pub tehreads: u32,
+    pub threads: u32,
     pub start_time: DateTime<Utc>,
     pub cpu_usage_percent: f32,
-    pub memory_usage_bytes: u32,
+    pub memory_usage_bytes: u64,
     pub memory_usage_percent: f64,
     pub virtual_memory_bytes: u64,
     pub disk_write_bytes: u64,
@@ -42,12 +42,12 @@ pub enum ProcessState {
 
 pub enum ProcessSignal {
     Kill,       // SIGKILL (9)
-    Terminate,  // SIGTERM(15)
-    Stop,       // SIGTOP(19)
+    Terminate,  // SIGTERM (15)
+    Stop,       // SIGTOP (19)
     Continue,   // SIGCONT (18)
-    Interrupt,  // SIGINT(2)
-    Quit,       // SIGQUIT(3)
-    Hangup,     // SIGHUP(1)
+    Interrupt,  // SIGINT (2)
+    Quit,       // SIGQUIT (3)
+    Hangup,     // SIGHUP (1)
     Custom(i32),
 }
 
