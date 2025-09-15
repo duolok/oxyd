@@ -11,7 +11,6 @@ async fn main() {
         Ok(pids) => {
             println!("Found {} processes:", pids.len());
             
-            // Get details for first few processes
             for pid in pids.iter() {
                 match process_manager.get_process(*pid).await {
                     Ok(process) => {
