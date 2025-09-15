@@ -46,7 +46,7 @@ pub struct CpuCollectorConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MemoryCollelctorConfig {
+pub struct MemoryCollectorConfig {
     pub enabled: bool,
 }
 
