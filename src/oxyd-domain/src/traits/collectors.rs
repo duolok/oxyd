@@ -1,27 +1,30 @@
+use async_trait::async_trait;
 use crate::models::{SystemMetrics};
+use crate::errors::CollectorError;
 
 #[async_trait]
-pub trait Collector: Send + Snyc {
-    //Unique identifier for the collector
+pub trait Collector: Send + Sync {
+    // Unique identifier for the collector
     fn id(&self) -> &str;
     
     // Collect metrics from the system
-    async fn collect(&self) -> Result<SystemMetrics>;
-
-    // Check if collecton is availaable on this system.
+    async fn collect(&self) -> Result<SystemMetrics, CollectorError>;
+    
+    // Check if collector is available on this system
     fn is_available(&self) -> bool;
-
-    // Get collection interval in milisecondsA.
+    
+    // Get collection interval in milliseconds
     fn interval_ms(&self) -> u64 {
         1000
     }
 }
 
 #[async_trait]
-pub trait PluginCollector: Collector {
-    // Initialize the plugin.
-    async fn initialize(&mut self) -> Result<(), CollectionError>;
+pub trait ProcessManager: Send + Sync {
+    async fn list_processes(&self) -> Result<Vec<u32>, crate::errors::ProcessError>;
+}
 
-    // Cleanup resources 
-    async fn cleanup(&mut self) -> Result<(), CollectionError>;
+#[async_trait]
+pub trait Plugin: Send + Sync {
+    fn name(&self) -> &str;
 }
