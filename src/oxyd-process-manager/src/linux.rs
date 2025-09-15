@@ -31,7 +31,7 @@ impl LinuxProcessManager {
 #[async_trait]
 impl ProcessManager for LinuxProcessManager {
     async fn list_processes(&self) -> Result<Vec<u32>, ProcessError> {
-        Ok(vec![1, 2, 3, 1234, 5678])
+        Ok(vec![1, 2, 3, 5, 6, 7, 8])
     }
 
 
@@ -52,9 +52,9 @@ impl ProcessManager for LinuxProcessManager {
             threads: 1,
             start_time: Utc::now(),
             cpu_usage_percent: 0.0,
-            memory_usage_bytes: 1024 * 1024, // 1MB
+            memory_usage_bytes: 1024 * 1024, 
             memory_usage_percent: 0.1,
-            virtual_memory_bytes: 2 * 1024 * 1024, // 2MB
+            virtual_memory_bytes: 2 * 1024 * 1024, 
             disk_write_bytes: 0,
             disk_read_bytes: 0,
             open_files: 5,
@@ -104,7 +104,4 @@ impl ProcessManager for LinuxProcessManager {
     async fn continue_process(&self, pid: u32) -> Result<ProcessActionResult, ProcessError> {
         self.send_signal(pid, ProcessSignal::Continue).await
     }
-
-
 }
-
