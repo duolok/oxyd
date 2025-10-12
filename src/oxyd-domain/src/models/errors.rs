@@ -52,6 +52,9 @@ pub enum ProcessError {
 
     #[error("Failed to {0} process {1}: {2}")]
     ActionFailed(String, u32, String),
+
+    #[error("Failed to list processes: {0}")]
+    ListFailed(String)
 }
 
 #[derive(Error, Debug)]
