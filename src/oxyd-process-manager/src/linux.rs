@@ -127,7 +127,32 @@ async fn list_processes(&self) -> Result<Vec<u32>, ProcessError> {
             ProcessSignal::Custom(_num) => "CUSTOM",
         };
 
-    Ok(ProcessActionResult {
+        let process: Process = self.get_process(pid).await?;
+        if self.protected_processes.contains(&process.name) {
+            return Err(ProcessError::PermissionDenied(pid));
+        }
+
+        let output = tokio::process::Command::new("kill")
+            .arg(format!("-{}", signal_name))
+            .arg(pid.to_string())
+            .output()
+            .await
+            .map_err(|e| ProcessError::ActionFailed(
+                "kill".to_string(), 
+                pid, 
+                e.to_string()
+            ))?; 
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(ProcessError::ActionFailed(
+                "kill".to_string(),
+                pid,
+                stderr.to_string()
+            ));
+        }
+
+        Ok(ProcessActionResult {
             pid,
             action: ProcessAction::Terminate,
             success: true,
