@@ -4,6 +4,8 @@ use oxyd_domain:: {
     models::{Process, ProcessState, ProcessAction, ProcessSignal, ProcessActionResult }
 };
 use async_trait::async_trait;
+use tokio::{fs, process::Command};
+use std::path::Path;
 use chrono::Utc;
 
 pub struct LinuxProcessManager {
@@ -30,16 +32,38 @@ impl LinuxProcessManager {
 
 #[async_trait]
 impl ProcessManager for LinuxProcessManager {
-    async fn list_processes(&self) -> Result<Vec<u32>, ProcessError> {
-        Ok(vec![1, 2, 3, 5, 6, 7, 8])
+
+async fn list_processes(&self) -> Result<Vec<u32>, ProcessError> {
+    let mut pids = Vec::new();
+    
+    let mut entries = fs::read_dir("/proc").await
+        .map_err(|e| ProcessError::ListFailed(format!("Failed to read /proc: {}", e)))?;
+    
+    while let Some(entry) = entries.next_entry().await
+        .map_err(|e| ProcessError::ListFailed(format!("Failed to read entry: {}", e)))? {
+        
+        let file_name = entry.file_name();
+        let file_name_str = file_name.to_string_lossy();
+        
+        // Check if the directory name is a number (PID)
+        if let Ok(pid) = file_name_str.parse::<u32>() {
+            // Verify it's actually a process directory
+            let stat_path = format!("/proc/{}/stat", pid);
+            if Path::new(&stat_path).exists() {
+                pids.push(pid);
+            }
+        }
     }
+    
+    Ok(pids)
+} 
 
 
     async fn get_process(&self, pid: u32) -> Result<Process, ProcessError> {
      Ok(Process {
             pid,
             ppid: Some(1),
-            name: format!("process_{}", pid),
+            name: format!("{}", pid),
             command: format!("/usr/bin/process_{}", pid),
             arguments: vec![],
             executable_path: Some(format!("/usr/bin/process_{}", pid)),
@@ -61,8 +85,34 @@ impl ProcessManager for LinuxProcessManager {
             open_connections: 2,
         })}
 
-    async fn kill_process(&self, _pid: u32) -> Result<Process, ProcessError> {
-        panic!()
+    async fn kill_process(&self, pid: u32) -> Result<Process, ProcessError> {
+        let process : Process = self.get_process(pid).await?;
+
+        if self.protected_processes.contains(&process.name) {
+            return Err(ProcessError::PermissionDenied(pid));
+        }
+
+        let output = tokio::process::Command::new("kill")
+        .arg("-9")  
+        .arg(pid.to_string())
+        .output()
+        .await
+        .map_err(|e| ProcessError::ActionFailed(
+            "kill".to_string(), 
+            pid, 
+            e.to_string()
+        ))?; 
+
+    if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(ProcessError::ActionFailed(
+                "kill".to_string(),
+                pid,
+                stderr.to_string()
+            ));
+        }
+        
+        Ok(process)
     }
 
     async fn send_signal(&self, pid:u32, signal: ProcessSignal) -> Result<ProcessActionResult, ProcessError> {
