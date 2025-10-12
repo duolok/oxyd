@@ -54,7 +54,13 @@ pub enum ProcessError {
     ActionFailed(String, u32, String),
 
     #[error("Failed to list processes: {0}")]
-    ListFailed(String)
+    ListFailed(String),
+
+    #[error("Failed to read content of process with PID {0}: {1}")]
+    ReadFailed(u32, String),
+
+    #[error("Failed to parse process info: {0}")]
+    ParseError(String),
 }
 
 #[derive(Error, Debug)]
