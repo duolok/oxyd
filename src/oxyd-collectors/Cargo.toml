@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+oxyd-domain = { path = "../oxyd-domain" }  
+async-trait = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+hostname = "0.4.1"
