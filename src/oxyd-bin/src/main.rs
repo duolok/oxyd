@@ -14,8 +14,7 @@ async fn main() {
             for pid in pids.iter() {
                 match process_manager.get_process(*pid).await {
                     Ok(process) => {
-                        println!("  PID {}: {} ({})", 
-                            process.pid, 
+                        println!("  PID: {} ({})", 
                             process.name, 
                             match process.state {
                                 oxyd_domain::models::ProcessState::Running => "Running",
@@ -30,6 +29,13 @@ async fn main() {
                 }
             }
         }
+
         Err(e) => eprintln!("Error listing processes: {}", e),
     }
+
+    process_manager
+        .kill_process(20603)
+        .await
+        .map(|p| println!("Successfully killed process {}", p.pid))
+        .unwrap_or_else(|e| eprintln!("Failed to kill process 11356: {}", e));
 }
