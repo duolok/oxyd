@@ -109,12 +109,10 @@ impl Engine {
         }
     }
     
-    // Expose process manager for external use
     pub fn process_manager(&self) -> &Arc<dyn ProcessManager> {
         &self.process_manager
     }
     
-    // Subscribe to metrics updates
     pub fn subscribe_metrics(&self) -> broadcast::Receiver<SystemMetrics> {
         self.metrics_tx.subscribe()
     }
