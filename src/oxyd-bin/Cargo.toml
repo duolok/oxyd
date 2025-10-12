@@ -8,4 +8,5 @@ repository = "https://github.com/duolok/oxyd"
 [dependencies]
 oxyd-domain = { path = "../oxyd-domain" }  
 oxyd-core = { path = "../oxyd-core" }  
+oxyd-collectors = { path = "../oxyd-collectors" }  
 tokio = { workspace = true }
