@@ -8,3 +8,4 @@ oxyd-domain = { path = "../oxyd-domain" }
 async-trait = { workspace = true }
 chrono = { workspace = true }
 serde.workspace = true
+tokio = { workspace = true }
