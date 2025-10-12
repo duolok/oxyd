@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod cpu;
+pub mod memory;
+pub mod process;
+pub mod unified;
+pub mod disk;
+pub mod network;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use cpu::CpuCollector;
+pub use memory::MemoryCollector;
+pub use process::ProcessCollector;
+pub use unified::UnifiedCollector;
