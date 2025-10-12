@@ -5,7 +5,7 @@ use super::{
     NetworkInterface, NetworkStats
 };
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SystemMetrics {
     pub timestamp: DateTime<Utc>,
     pub system_info: SystemInfo,
@@ -16,7 +16,7 @@ pub struct SystemMetrics {
     pub processes: ProcessMetrics,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CpuMetrics {
     pub overall_usage_percent: f32,
     pub cores: Vec<CpuCore>,
@@ -25,7 +25,7 @@ pub struct CpuMetrics {
     pub interrupts: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LoadAverage {
     pub one_minute: f32,
     pub five_minutes: f32,
@@ -38,7 +38,7 @@ pub struct DiskMetrics {
     pub io_stats: DiskIoStats,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct NetworkMetrics {
     pub interfaces: Vec<NetworkInterface>,
     pub stats: Vec<NetworkStats>,
@@ -79,7 +79,7 @@ pub enum ConnectionState {
     Unknown,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ProcessMetrics {
     pub total_count: usize,
     pub running_count: usize,
