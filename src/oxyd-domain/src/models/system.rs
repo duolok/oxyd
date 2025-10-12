@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SystemInfo {
     pub hostname: String,
     pub kernel_version: String,
@@ -45,7 +45,7 @@ pub struct CpuStates {
     pub guest_nice: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MemoryInfo {
     pub total_bytes: u64,
     pub used_bytes: u64,
