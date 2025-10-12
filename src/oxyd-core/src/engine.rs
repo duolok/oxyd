@@ -1,8 +1,9 @@
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
+use tokio::time::{Duration, interval};
 use oxyd_domain::{
     models::{Config, SystemMetrics},
-    traits::{Collector, ProcessManager, Plugin},
+    traits::{Collector, Plugin, ProcessManager}, OxydError,
 };
 use oxyd_process_manager::LinuxProcessManager;
 
@@ -12,6 +13,7 @@ pub struct Engine {
     plugins: Arc<RwLock<Vec<Box<dyn Plugin>>>>,
     metrics_tx: broadcast::Sender<SystemMetrics>,
     config: Config,
+    running: Arc<RwLock<bool>>,
 }
 
 impl Engine {
@@ -28,7 +30,64 @@ impl Engine {
             plugins: Arc::new(RwLock::new(Vec::new())),
             metrics_tx,
             config,
+            running: Arc::new(RwLock::new(false)),
         }
+    }
+
+    pub async fn add_collector(&self, collector: Box<dyn Collector>) {
+        if collector.is_available() {
+            let mut collectors = self.collectors.write().await;
+            collectors.push(collector);
+            println!("Added collector: {}", collectors.last().unwrap().id());
+        } else {
+            eprintln!("Collector not available.");
+        }
+    }
+
+    pub async fn run(&self) -> Result<(), OxydError> {
+        *self.running.write().await = true;
+        println!("Engine starting.");
+
+        let collectors = self.collectors.clone();
+        let metrics_tx = self.metrics_tx.clone();
+        let update_interval = self.config.general.update_interval_ms;
+        let running = self.running.clone();
+
+        tokio::spawn(async move {
+            let mut ticker = interval(Duration::from_millis(update_interval));
+
+            loop {
+                ticker.tick().await;
+
+                if !*running.read().await {
+                    break;
+                }
+
+                let collectors_lock = collectors.read().await;
+                for collector in collectors_lock.iter() {
+                    match collector.collect().await {
+                        Ok(metrics) => {
+                            if let Err(e) = metrics_tx.send(metrics) { 
+                                eprintln!("Failed to broadcast metrics: {}", e);
+                            }
+                        },
+                        Err(e) => {
+                            eprintln!("Collector {} error: {}", collector.id(), e);
+                        }
+                    }
+                }
+            
+            }
+        });
+
+        loop {
+            if !*self.running.read().await {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        Ok(()) 
     }
     
     pub fn new_default() -> Self {
@@ -92,21 +151,6 @@ impl Engine {
         };
         
         Self::new(config)
-    }
-    
-    pub async fn run(&self) {
-        println!("Engine running...");
-        println!("Process Manager initialized");
-        
-        match self.process_manager.list_processes().await {
-            Ok(pids) => println!("Found {} processes", pids.len()),
-            Err(e) => eprintln!("Error listing processes: {}", e),
-        }
-        
-        loop {
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-            println!("Tick...");
-        }
     }
     
     pub fn process_manager(&self) -> &Arc<dyn ProcessManager> {
