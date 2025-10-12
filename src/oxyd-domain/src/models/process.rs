@@ -17,7 +17,7 @@ pub struct Process {
     pub nice: i32,
     pub threads: u32,
     pub start_time: DateTime<Utc>,
-    pub cpu_usage_percent: f32,
+    pub cpu_usage_percent: f64,
     pub memory_usage_bytes: u64,
     pub memory_usage_percent: f64,
     pub virtual_memory_bytes: u64,
