@@ -14,10 +14,10 @@ pub fn render(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app: &AppState
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(6),   // System Info
-            Constraint::Length(10),  // CPU Summary + Graph
-            Constraint::Length(10),  // Memory Summary + Graph
-            Constraint::Min(6),      // Process Summary
+            Constraint::Length(6),   
+            Constraint::Length(10),  
+            Constraint::Length(10),  
+            Constraint::Min(6),      
         ])
         .split(area);
 
