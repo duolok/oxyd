@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+oxyd-domain = { path = "../oxyd-domain" }  
+ratatui.workspace = true
+tokio = { workspace = true }
+chrono = { workspace = true }
+crossterm = "0.29.0"
