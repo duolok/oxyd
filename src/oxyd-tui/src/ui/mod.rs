@@ -5,6 +5,8 @@ pub mod processes;
 pub mod widgets;
 pub mod network;
 pub mod disk;
+pub mod help;
+pub mod notifications;
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -29,13 +31,27 @@ pub fn render(f: &mut Frame, app: &AppState) {
     render_header(f, chunks[0], app);
     render_content(f, chunks[1], app);
     render_footer(f, chunks[2], app);
+    
+    // Render help screen on top if active
+    if app.show_help {
+        help::render_help(f);
+    }
 }
 
 fn render_header(f: &mut Frame, area: Rect, app: &AppState) {
-    let titles: Vec<Line> = Tab::all()
+    let mut titles: Vec<Line> = Tab::all()
         .iter()
         .map(|tab| {
-            let title = format!(" {} ", tab.title());
+            let mut title = format!(" {} ", tab.title());
+            
+            // Add notification badge
+            if matches!(tab, Tab::Notifications) {
+                let unread = app.notification_manager.unread_count();
+                if unread > 0 {
+                    title = format!(" {} ({}) ", tab.title(), unread);
+                }
+            }
+            
             Line::from(Span::styled(
                 title,
                 if *tab == app.current_tab {
@@ -53,7 +69,7 @@ fn render_header(f: &mut Frame, area: Rect, app: &AppState) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(" OXYD System Monitor ")
+                .title(" OXYD ")
                 .style(Style::default().fg(Color::Cyan)),
         )
         .select(app.current_tab as usize)
@@ -73,8 +89,9 @@ fn render_content(f: &mut Frame, area: Rect, app: &AppState) {
             Tab::Cpu => cpu::render(f, area, metrics, app),
             Tab::Memory => memory::render(f, area, metrics, app),
             Tab::Processes => processes::render(f, area, metrics, app),
-            Tab::Network => network::render(f, area, metrics, app),  
-            Tab::Disk => disk::render(f, area, metrics, app),       
+            Tab::Network => network::render(f, area, metrics, app),
+            Tab::Disk => disk::render(f, area, metrics, app),
+            Tab::Notifications => notifications::render(f, area, app),
         }
     } else {
         render_loading(f, area);
@@ -82,9 +99,17 @@ fn render_content(f: &mut Frame, area: Rect, app: &AppState) {
 }
 
 fn render_footer(f: &mut Frame, area: Rect, app: &AppState) {
+    let unread_notifs = app.notification_manager.unread_count();
+    let notif_indicator = if unread_notifs > 0 {
+        format!(" 🔔 {} ", unread_notifs)
+    } else {
+        String::new()
+    };
+    
     let help_text = match app.current_tab {
-        Tab::Processes => " ↑/↓: Scroll | PgUp/PgDn: Page | Tab: Next | 1-6: Switch Tab | q: Quit ",
-        _ => " Tab: Next Tab | 1-6: Switch Tab | q: Quit ",
+        Tab::Processes => format!(" ↑/↓: Scroll | PgUp/PgDn: Page | Tab: Next | 1-7: Switch Tab | ?: Help | q: Quit{}", notif_indicator),
+        Tab::Notifications => format!(" m: Mark all read | x: Clear all | Tab: Next | 1-7: Switch Tab | ?: Help | q: Quit{}", notif_indicator),
+        _ => format!(" Tab: Next Tab | 1-7: Switch Tab | ?: Help | q: Quit{}", notif_indicator),
     };
 
     let footer = Block::default()
@@ -108,19 +133,6 @@ fn render_loading(f: &mut Frame, area: Rect) {
     let text = ratatui::widgets::Paragraph::new("Waiting for system metrics...")
         .block(block)
         .style(Style::default().fg(Color::White));
-
-    f.render_widget(text, area);
-}
-
-fn render_placeholder(f: &mut Frame, area: Rect, title: &str) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" {} (Coming Soon) ", title))
-        .style(Style::default().fg(Color::Gray));
-
-    let text = ratatui::widgets::Paragraph::new(format!("{} metrics will be displayed here.", title))
-        .block(block)
-        .style(Style::default().fg(Color::DarkGray));
 
     f.render_widget(text, area);
 }
