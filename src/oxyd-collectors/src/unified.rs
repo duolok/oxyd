@@ -7,12 +7,14 @@ use oxyd_domain::{
 use std::sync::Arc;
 use chrono::Utc;
 
-use crate::{CpuCollector, MemoryCollector, ProcessCollector};
+use crate::{CpuCollector, MemoryCollector, ProcessCollector, NetworkCollector, DiskCollector};
 
 pub struct UnifiedCollector {
     cpu_collector: CpuCollector,
     memory_collector: MemoryCollector,
     process_collector: ProcessCollector,
+    network_collector: NetworkCollector,  
+    disk_collector: DiskCollector,        
 }
 
 impl UnifiedCollector {
@@ -21,6 +23,8 @@ impl UnifiedCollector {
             cpu_collector: CpuCollector::new(per_core_cpu),
             memory_collector: MemoryCollector::new(),
             process_collector: ProcessCollector::new(process_manager),
+            network_collector: NetworkCollector::new(),  
+            disk_collector: DiskCollector::new(),        
         }
     }
 
@@ -40,7 +44,6 @@ impl UnifiedCollector {
             .unwrap_or("unknown")
             .to_string();
 
-        // Get uptime
         let (boot_time, uptime) = match fs::read_to_string("/proc/uptime").await {
             Ok(content) => {
                 let uptime_secs = content
@@ -73,34 +76,29 @@ impl Collector for UnifiedCollector {
     }
 
     async fn collect(&self) -> Result<SystemMetrics, CollectorError> {
-            let (cpu_result, memory_result, process_result) = tokio::join!(
+        let (cpu_result, memory_result, process_result, network_result, disk_result) = tokio::join!(
             self.cpu_collector.collect(),
             self.memory_collector.collect(),
-            self.process_collector.collect()
+            self.process_collector.collect(),
+            self.network_collector.collect(),  
+            self.disk_collector.collect()     
         );
-        
 
-        // Get system info
         let system_info = self.get_system_info().await;
 
-        // Combine results
         let cpu_metrics = cpu_result?.cpu;
         let memory_metrics = memory_result?.memory;
         let process_metrics = process_result?.processes;
+        let network_metrics = network_result?.network;  
+        let disk_metrics = disk_result?.disks;         
 
         Ok(SystemMetrics {
             timestamp: Utc::now(),
             system_info,
             cpu: cpu_metrics,
             memory: memory_metrics,
-            disks: vec![], // TODO: Implement disk collector
-            network: oxyd_domain::models::NetworkMetrics {
-                interfaces: vec![],
-                stats: vec![],
-                total_bytes_sent: 0,
-                total_bytes_received: 0,
-                active_connections: vec![],
-            },
+            disks: disk_metrics,        
+            network: network_metrics,  
             processes: process_metrics,
         })
     }
