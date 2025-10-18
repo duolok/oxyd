@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod app;
+pub mod ui;
+pub mod event;
+pub mod tabs;
+pub mod history;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use app::{App, AppState};
+pub use event::{Event, EventHandler};
+pub use tabs::Tab;
+pub use history::MetricsHistory;
