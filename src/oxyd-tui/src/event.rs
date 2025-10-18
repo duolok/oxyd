@@ -62,6 +62,7 @@ pub fn map_key_to_action(key: KeyEvent) -> Option<crate::app::Action> {
 
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => Some(Action::Quit),
+        KeyCode::Char('?') => Some(Action::ToggleHelp),
         KeyCode::Tab => Some(Action::NextTab),
         KeyCode::BackTab => Some(Action::PreviousTab),
         KeyCode::Char('1') => Some(Action::SwitchTab(crate::tabs::Tab::Overview)),
@@ -70,22 +71,27 @@ pub fn map_key_to_action(key: KeyEvent) -> Option<crate::app::Action> {
         KeyCode::Char('4') => Some(Action::SwitchTab(crate::tabs::Tab::Processes)),
         KeyCode::Char('5') => Some(Action::SwitchTab(crate::tabs::Tab::Network)),
         KeyCode::Char('6') => Some(Action::SwitchTab(crate::tabs::Tab::Disk)),
+        KeyCode::Char('7') => Some(Action::SwitchTab(crate::tabs::Tab::Notifications)),
         KeyCode::Up | KeyCode::Char('k') => Some(Action::ScrollUp),
         KeyCode::Down | KeyCode::Char('j') => Some(Action::ScrollDown),
         KeyCode::PageUp => Some(Action::PageUp),
         KeyCode::PageDown => Some(Action::PageDown),
+        KeyCode::Home => Some(Action::Home),
+        KeyCode::End => Some(Action::End),
         
-        KeyCode::Char('K') => Some(Action::KillSelectedProcess),      
+        KeyCode::Char('K') => Some(Action::KillSelectedProcess),
         KeyCode::Char('s') => Some(Action::SuspendSelectedProcess),
         KeyCode::Char('c') => Some(Action::ContinueSelectedProcess),
         KeyCode::Char('t') => Some(Action::TerminateSelectedProcess),
-        KeyCode::Char('r') => Some(Action::LoadProcessList),         
+        KeyCode::Char('r') => Some(Action::LoadProcessList),
         
-        // Sorting keys
-        KeyCode::Char('p') => Some(Action::SortByColumn(0)), // Sort by PID
-        KeyCode::Char('n') => Some(Action::SortByColumn(1)), // Sort by Name
-        KeyCode::Char('C') => Some(Action::SortByColumn(2)), // Sort by CPU (Shift+C)
-        KeyCode::Char('m') => Some(Action::SortByColumn(3)), // Sort by Memory
+        KeyCode::Char('p') => Some(Action::SortByColumn(0)), 
+        KeyCode::Char('n') => Some(Action::SortByColumn(1)), 
+        KeyCode::Char('C') => Some(Action::SortByColumn(2)), 
+        KeyCode::Char('M') => Some(Action::SortByColumn(3)), 
+        
+        KeyCode::Char('m') => Some(Action::MarkAllNotificationsRead),
+        KeyCode::Char('x') => Some(Action::ClearAllNotifications),
         
         _ => None,
     }
