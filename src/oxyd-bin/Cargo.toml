@@ -8,5 +8,8 @@ repository = "https://github.com/duolok/oxyd"
 [dependencies]
 oxyd-domain = { path = "../oxyd-domain" }  
 oxyd-core = { path = "../oxyd-core" }  
+oxyd-tui = { path = "../oxyd-tui" }  
 oxyd-collectors = { path = "../oxyd-collectors" }  
 tokio = { workspace = true }
+ratatui.workspace = true
+crossterm = "0.29.0"

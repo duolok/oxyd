@@ -1,159 +1,259 @@
-use oxyd_core::engine::Engine;
+use crossterm::{
+    event::{DisableMouseCapture, EnableMouseCapture},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
 use oxyd_collectors::UnifiedCollector;
-use tokio::time::{sleep, Duration};
-use std::io::{self, Write};
+use oxyd_core::engine::Engine;
+use oxyd_tui::{App, Event, EventHandler, event::map_key_to_action, app::Action};
+use oxyd_domain::{ProcessSignal, traits::ProcessManager};
+use ratatui::{backend::CrosstermBackend, Terminal};
+use std::io;
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::time::{interval, Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\nOXYD System Monitor - Collector Test\n");
-    println!("Testing all collectors before TUI implementation...\n");
+    // Setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
+    // Create engine
     let engine = Engine::new_default();
-    
     let process_manager = engine.process_manager().clone();
-    let collector = UnifiedCollector::new(process_manager, true);
     
+    // Create unified collector with all collectors
+    let collector = UnifiedCollector::new(process_manager.clone(), true);
     engine.add_collector(Box::new(collector)).await;
-    
+
+    // Create app with process manager
+    let mut app = App::new().with_process_manager(process_manager.clone());
+
+    // Create event handler
+    let mut event_handler = EventHandler::new();
+    event_handler.start_polling().await;
+
+    // Subscribe to metrics
     let mut metrics_rx = engine.subscribe_metrics();
-    
-    let mut update_count = 0;
-    
-    let display_task = tokio::spawn(async move {
-        while let Ok(metrics) = metrics_rx.recv().await {
-            update_count += 1;
-            
-            print!("\x1B[2J\x1B[1;1H");
-            io::stdout().flush().unwrap();
-            
-            println!("╔═══════════════════════════════════════════════════════════════════════╗");
-            println!("║               OXYD COLLECTOR TEST - Update #{}              ", update_count);
-            println!("║  Time: {}                                          ", 
-                metrics.timestamp.format("%Y-%m-%d %H:%M:%S"));
-            println!("╠═══════════════════════════════════════════════════════════════════════╣");
-            
-            println!("║ 🖥️  SYSTEM INFORMATION");
-            println!("║  └─ Hostname: {}", metrics.system_info.hostname);
-            println!("║  └─ Architecture: {}", metrics.system_info.architecture);
-            println!("║  └─ OS: {}", metrics.system_info.os_version);
-            println!("║  └─ Uptime: {} seconds ({:.1} hours)", 
-                metrics.system_info.uptime_seconds,
-                metrics.system_info.uptime_seconds as f64 / 3600.0
-            );
-            println!("╠═══════════════════════════════════════════════════════════════════════╣");
-            
-            println!("║ 💻 CPU METRICS");
-            println!("║  └─ Overall Usage: {:.1}%", metrics.cpu.overall_usage_percent);
-            println!("║  └─ Load Average: {:.2} (1m), {:.2} (5m), {:.2} (15m)",
-                metrics.cpu.load_average.one_minute,
-                metrics.cpu.load_average.five_minutes,
-                metrics.cpu.load_average.fifteen_minutes
-            );
-            
-            if !metrics.cpu.cores.is_empty() {
-                println!("║  └─ Cores ({} total):", metrics.cpu.cores.len());
-                
-                for chunk in metrics.cpu.cores.chunks(4) {
-                    print!("║     ");
-                    for core in chunk {
-                        let bar = create_usage_bar(core.usage_percent, 10);
-                        print!("CPU{:2}[{}] {:.1}%  ", core.id, bar, core.usage_percent);
-                    }
-                    println!();
-                }
-            }
-            println!("╠═══════════════════════════════════════════════════════════════════════╣");
-            
-            println!("║ 💾 MEMORY METRICS");
-            let mem_gb = metrics.memory.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-            let used_gb = metrics.memory.used_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-            let avail_gb = metrics.memory.available_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-            
-            println!("║  └─ Total: {:.2} GB", mem_gb);
-            println!("║  └─ Used: {:.2} GB ({:.1}%)", used_gb, metrics.memory.usage_percent);
-            println!("║  └─ Available: {:.2} GB", avail_gb);
-            println!("║  └─ Cached: {:.2} GB", 
-                metrics.memory.cached_bytes as f64 / 1024.0 / 1024.0 / 1024.0);
-            
-            let mem_bar = create_usage_bar(metrics.memory.usage_percent, 50);
-            println!("║  └─ Usage: [{}]", mem_bar);
-            
-            if metrics.memory.swap_total_bytes > 0 {
-                let swap_gb = metrics.memory.swap_total_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-                let swap_used_gb = metrics.memory.swap_used_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-                println!("║  └─ Swap: {:.2} GB / {:.2} GB ({:.1}%)",
-                    swap_used_gb, swap_gb, metrics.memory.swap_usage_percent);
-            }
-            println!("╠═══════════════════════════════════════════════════════════════════════╣");
-            
-            println!("║ 🔄 PROCESS METRICS");
-            println!("║  └─ Total Processes: {}", metrics.processes.total_count);
-            println!("║  └─ Running: {}", metrics.processes.running_count);
-            println!("║  └─ Sleeping: {}", metrics.processes.sleeping_count);
-            println!("║  └─ Stopped: {}", metrics.processes.stopped_count);
-            println!("║  └─ Zombie: {}", metrics.processes.zombie_count);
-            
-            let total = metrics.processes.total_count as f32;
-            let running_pct = (metrics.processes.running_count as f32 / total * 100.0) as usize;
-            let sleeping_pct = (metrics.processes.sleeping_count as f32 / total * 100.0) as usize;
-            let stopped_pct = (metrics.processes.stopped_count as f32 / total * 100.0) as usize;
-            let zombie_pct = (metrics.processes.zombie_count as f32 / total * 100.0) as usize;
-            
-            println!("║  └─ Distribution:");
-            println!("║     [{}{}{}{}]",
-                "▶".repeat(running_pct.min(25)),
-                "█".repeat(sleeping_pct.min(25)),
-                "⏸".repeat(stopped_pct.min(25)),
-                "Z".repeat(zombie_pct.min(25))
-            );
-            println!("╠═══════════════════════════════════════════════════════════════════════╣");
-            
-            println!("║ ✅ COLLECTOR STATUS");
-            println!("║  └─ All collectors operational");
-            println!("║  └─ Metrics update interval: 1000ms");
-            println!("║  └─ Next update in 1 second...");
-            println!("╚═══════════════════════════════════════════════════════════════════════╝");
-            println!();
-            println!("Press Ctrl+C to stop...");
-        }
-    });
-    
+
+    // Create action channel
+    let (action_tx, mut action_rx) = mpsc::unbounded_channel::<Action>();
+
+    // Spawn engine
     let engine_handle = tokio::spawn(async move {
         if let Err(e) = engine.run().await {
             eprintln!("Engine error: {}", e);
         }
     });
-    
-    println!("Running for 30 seconds to demonstrate collectors...\n");
-    sleep(Duration::from_secs(30)).await;
-    
-    tokio::select! {
-        _ = display_task => {},
-        _ = engine_handle => {},
-        _ = sleep(Duration::from_secs(1)) => {}
+
+    // Spawn metrics receiver
+    let action_tx_clone = action_tx.clone();
+    tokio::spawn(async move {
+        while let Ok(metrics) = metrics_rx.recv().await {
+            let _ = action_tx_clone.send(Action::UpdateMetrics(metrics));
+        }
+    });
+
+    // Spawn process list loader
+    let action_tx_clone = action_tx.clone();
+    let pm_clone = process_manager.clone();
+    tokio::spawn(async move {
+        let mut interval = interval(Duration::from_secs(2)); // Refresh every 2 seconds
+        loop {
+            interval.tick().await;
+            let _ = action_tx_clone.send(Action::LoadProcessList);
+        }
+    });
+
+    // Main loop
+    loop {
+        // Render
+        terminal.draw(|f| {
+            oxyd_tui::ui::render(f, &app.state);
+        })?;
+
+        // Handle events
+        tokio::select! {
+            Some(event) = event_handler.next() => {
+                match event {
+                    Event::Key(key) => {
+                        if let Some(action) = map_key_to_action(key) {
+                            let _ = action_tx.send(action);
+                        }
+                    }
+                    Event::Tick => {
+                        let _ = action_tx.send(Action::Tick);
+                    }
+                    Event::Resize => {
+                        // Terminal will handle resize automatically
+                    }
+                }
+            }
+            Some(action) = action_rx.recv() => {
+                // Handle process management actions asynchronously
+                match action.clone() {
+                    Action::LoadProcessList => {
+                        let pm = process_manager.clone();
+                        let tx = action_tx.clone();
+                        tokio::spawn(async move {
+                            match load_process_list(pm).await {
+                                Ok(processes) => {
+                                    let _ = tx.send(Action::ProcessListLoaded(processes));
+                                }
+                                Err(e) => {
+                                    let _ = tx.send(Action::ProcessActionFailed(
+                                        format!("Failed to load processes: {}", e)
+                                    ));
+                                }
+                            }
+                        });
+                    }
+                    Action::KillSelectedProcess => {
+                        if let Some(process) = app.get_selected_process() {
+                            let pid = process.pid;
+                            let name = process.name.clone();
+                            let pm = process_manager.clone();
+                            let tx = action_tx.clone();
+                            
+                            tokio::spawn(async move {
+                                match pm.kill_process(pid).await {
+                                    Ok(_) => {
+                                        let _ = tx.send(Action::ProcessActionComplete(
+                                            format!("Killed process {} ({})", name, pid)
+                                        ));
+                                        let _ = tx.send(Action::LoadProcessList);
+                                    }
+                                    Err(e) => {
+                                        let _ = tx.send(Action::ProcessActionFailed(
+                                            format!("Failed to kill {}: {}", name, e)
+                                        ));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    Action::SuspendSelectedProcess => {
+                        if let Some(process) = app.get_selected_process() {
+                            let pid = process.pid;
+                            let name = process.name.clone();
+                            let pm = process_manager.clone();
+                            let tx = action_tx.clone();
+                            
+                            tokio::spawn(async move {
+                                match pm.suspend_process(pid).await {
+                                    Ok(_) => {
+                                        let _ = tx.send(Action::ProcessActionComplete(
+                                            format!("Suspended process {} ({})", name, pid)
+                                        ));
+                                        let _ = tx.send(Action::LoadProcessList);
+                                    }
+                                    Err(e) => {
+                                        let _ = tx.send(Action::ProcessActionFailed(
+                                            format!("Failed to suspend {}: {}", name, e)
+                                        ));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    Action::ContinueSelectedProcess => {
+                        if let Some(process) = app.get_selected_process() {
+                            let pid = process.pid;
+                            let name = process.name.clone();
+                            let pm = process_manager.clone();
+                            let tx = action_tx.clone();
+                            
+                            tokio::spawn(async move {
+                                match pm.continue_process(pid).await {
+                                    Ok(_) => {
+                                        let _ = tx.send(Action::ProcessActionComplete(
+                                            format!("Continued process {} ({})", name, pid)
+                                        ));
+                                        let _ = tx.send(Action::LoadProcessList);
+                                    }
+                                    Err(e) => {
+                                        let _ = tx.send(Action::ProcessActionFailed(
+                                            format!("Failed to continue {}: {}", name, e)
+                                        ));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    Action::TerminateSelectedProcess => {
+                        if let Some(process) = app.get_selected_process() {
+                            let pid = process.pid;
+                            let name = process.name.clone();
+                            let pm = process_manager.clone();
+                            let tx = action_tx.clone();
+                            
+                            tokio::spawn(async move {
+                                match pm.send_signal(pid, ProcessSignal::Terminate).await {
+                                    Ok(_) => {
+                                        let _ = tx.send(Action::ProcessActionComplete(
+                                            format!("Terminated process {} ({})", name, pid)
+                                        ));
+                                        let _ = tx.send(Action::LoadProcessList);
+                                    }
+                                    Err(e) => {
+                                        let _ = tx.send(Action::ProcessActionFailed(
+                                            format!("Failed to terminate {}: {}", name, e)
+                                        ));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    _ => {}
+                }
+
+                // Dispatch action to app state
+                app.dispatch(action);
+                
+                if app.should_quit() {
+                    break;
+                }
+            }
+        }
     }
+
+    // Cleanup
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    drop(engine_handle);
 
     Ok(())
 }
 
-fn create_usage_bar(percentage: f32, width: usize) -> String {
-    let filled = ((percentage / 100.0) * width as f32) as usize;
-    let empty = width.saturating_sub(filled);
+async fn load_process_list(
+    process_manager: Arc<dyn ProcessManager>
+) -> Result<Vec<oxyd_domain::models::Process>, Box<dyn std::error::Error>> {
+    // Get all PIDs
+    let pids = process_manager.list_processes().await?;
     
-    let bar = match percentage {
-        p if p < 50.0 => format!("{}{}",
-            "█".repeat(filled),
-            "░".repeat(empty)
-        ),
-        p if p < 80.0 => format!("{}{}",
-            "▓".repeat(filled),
-            "░".repeat(empty)
-        ),
-        _ => format!("{}{}",
-            "█".repeat(filled),
-            "░".repeat(empty)
-        ),
-    };
+    // Load detailed info for top 100 processes (to avoid overwhelming the UI)
+    let mut processes = Vec::new();
     
-    bar
+    for pid in pids.iter().take(100) {
+        if let Ok(process) = process_manager.get_process(*pid).await {
+            processes.push(process);
+        }
+    }
+    
+    // Sort by CPU usage by default
+    processes.sort_by(|a, b| {
+        b.cpu_usage_percent.partial_cmp(&a.cpu_usage_percent).unwrap()
+    });
+    
+    Ok(processes)
 }
