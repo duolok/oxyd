@@ -5,7 +5,6 @@ members = [
     "src/oxyd-collectors",
     "src/oxyd-process-manager",
     "src/oxyd-tui",
-    "src/oxyd-cli",
     "src/oxyd-bin",
 ]
 resolver = "2"
