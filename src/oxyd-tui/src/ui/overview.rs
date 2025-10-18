@@ -100,7 +100,6 @@ fn render_cpu_with_graph(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app
     let paragraph = Paragraph::new(lines).block(block);
     f.render_widget(paragraph, chunks[0]);
 
-    // CPU Graph
     if let Some(history) = &app.metrics_history {
         let cpu_data = history.cpu_data();
         let sparkline = create_sparkline(&cpu_data, " CPU History ", Color::Green);
@@ -112,12 +111,11 @@ fn render_memory_with_graph(f: &mut Frame, area: Rect, metrics: &SystemMetrics, 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(50),  // Info
-            Constraint::Percentage(50),  // Graph
+            Constraint::Percentage(50),  
+            Constraint::Percentage(50), 
         ])
         .split(area);
 
-    // Memory Info
     let mem = &metrics.memory;
     let bar = create_gauge_bar(mem.usage_percent, 30);
     
