@@ -9,3 +9,5 @@ pub use cpu::CpuCollector;
 pub use memory::MemoryCollector;
 pub use process::ProcessCollector;
 pub use unified::UnifiedCollector;
+pub use network::NetworkCollector;
+pub use disk::DiskCollector;
