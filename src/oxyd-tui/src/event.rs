@@ -82,8 +82,10 @@ pub fn map_key_to_action(key: KeyEvent, input_mode: InputMode, current_tab: Tab)
         KeyCode::Char('4') => return Some(Action::SwitchTab(Tab::Processes)),
         KeyCode::Char('5') => return Some(Action::SwitchTab(Tab::Network)),
         KeyCode::Char('6') => return Some(Action::SwitchTab(Tab::Disk)),
-        KeyCode::Char('7') => return Some(Action::SwitchTab(Tab::Notifications)),
-        KeyCode::Char('8') => return Some(Action::SwitchTab(Tab::Settings)),
+        KeyCode::Char('7') | KeyCode::Char('n') => {
+            return Some(Action::SwitchTab(Tab::Notifications));
+        }
+        KeyCode::Char('8') | KeyCode::Char('z') => return Some(Action::SwitchTab(Tab::Settings)),
         KeyCode::Up | KeyCode::Char('k') => return Some(Action::ScrollUp),
         KeyCode::Down | KeyCode::Char('j') => return Some(Action::ScrollDown),
         KeyCode::PageUp => return Some(Action::PageUp),
