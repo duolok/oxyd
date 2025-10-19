@@ -1,16 +1,16 @@
-use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
-use tokio::time::{Duration, interval};
 use oxyd_domain::{
+    OxydError,
     models::{Config, SystemMetrics},
-    traits::{Collector, Plugin, ProcessManager}, OxydError,
+    traits::{Collector, ProcessManager},
 };
 use oxyd_process_manager::LinuxProcessManager;
+use std::sync::Arc;
+use tokio::sync::{RwLock, broadcast};
+use tokio::time::{Duration, interval};
 
 pub struct Engine {
     collectors: Arc<RwLock<Vec<Box<dyn Collector>>>>,
     process_manager: Arc<dyn ProcessManager>,
-    plugins: Arc<RwLock<Vec<Box<dyn Plugin>>>>,
     metrics_tx: broadcast::Sender<SystemMetrics>,
     config: Config,
     running: Arc<RwLock<bool>>,
@@ -19,15 +19,13 @@ pub struct Engine {
 impl Engine {
     pub fn new(config: Config) -> Self {
         let (metrics_tx, _) = broadcast::channel(100);
-        
-        let process_manager = LinuxProcessManager::with_config(
-            config.process_manager.protected_processes.clone()
-        );
-        
+
+        let process_manager =
+            LinuxProcessManager::with_config(config.process_manager.protected_processes.clone());
+
         Self {
             collectors: Arc::new(RwLock::new(Vec::new())),
             process_manager: Arc::new(process_manager),
-            plugins: Arc::new(RwLock::new(Vec::new())),
             metrics_tx,
             config,
             running: Arc::new(RwLock::new(false)),
@@ -67,16 +65,15 @@ impl Engine {
                 for collector in collectors_lock.iter() {
                     match collector.collect().await {
                         Ok(metrics) => {
-                            if let Err(e) = metrics_tx.send(metrics) { 
+                            if let Err(e) = metrics_tx.send(metrics) {
                                 eprintln!("Failed to broadcast metrics: {}", e);
                             }
-                        },
+                        }
                         Err(e) => {
                             eprintln!("Collector {} error: {}", collector.id(), e);
                         }
                     }
                 }
-            
             }
         });
 
@@ -87,9 +84,9 @@ impl Engine {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
 
-        Ok(()) 
+        Ok(())
     }
-    
+
     pub fn new_default() -> Self {
         let config = Config {
             general: oxyd_domain::models::GeneralConfig {
@@ -105,15 +102,9 @@ impl Engine {
                     per_core: true,
                     collect_temperature: false,
                 },
-                memory: oxyd_domain::models::MemoryCollectorConfig {
-                    enabled: true,
-                },
-                disk: oxyd_domain::models::DiskCollectorConfig {
-                    enabled: true,
-                },
-                network: oxyd_domain::models::NetworkCollectorConfig {
-                    enabled: true,
-                },
+                memory: oxyd_domain::models::MemoryCollectorConfig { enabled: true },
+                disk: oxyd_domain::models::DiskCollectorConfig { enabled: true },
+                network: oxyd_domain::models::NetworkCollectorConfig { enabled: true },
                 process: oxyd_domain::models::ProcessCollectorConfig {
                     enabled: true,
                     command_line_max_length: 256,
@@ -137,26 +128,20 @@ impl Engine {
                     String::from("kernel"),
                 ],
             },
-            plugins: oxyd_domain::models::PluginConfig {
-                enabled: false,
-                plugin_dir: String::from("/usr/local/lib/oxyd/plugins"),
-                auto_load: false,
-                plugins: std::collections::HashMap::new(),
-            },
             alerts: oxyd_domain::models::AlertConfig {
                 enabled: false,
                 rules: vec![],
                 channels: vec![],
             },
         };
-        
+
         Self::new(config)
     }
-    
+
     pub fn process_manager(&self) -> &Arc<dyn ProcessManager> {
         &self.process_manager
     }
-    
+
     pub fn subscribe_metrics(&self) -> broadcast::Receiver<SystemMetrics> {
         self.metrics_tx.subscribe()
     }
