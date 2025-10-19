@@ -10,8 +10,6 @@ pub struct StatFields {
     pub starttime: u64,
     pub utime: u64,
     pub stime: u64,
-    pub cutime: u64,
-    pub cstime: u64,
 }
 
 pub struct StatusFields {
@@ -25,9 +23,11 @@ pub struct StatusFields {
 }
 
 pub fn parse_stat(stat_content: &str) -> Result<StatFields, ProcessError> {
-    let start = stat_content.find('(')
+    let start = stat_content
+        .find('(')
         .ok_or_else(|| ProcessError::ParseError("Invalid stat format".to_string()))?;
-    let end = stat_content.rfind(')')
+    let end = stat_content
+        .rfind(')')
         .ok_or_else(|| ProcessError::ParseError("Invalid stat format".to_string()))?;
 
     let comm = stat_content[start + 1..end].to_string();
@@ -36,7 +36,9 @@ pub fn parse_stat(stat_content: &str) -> Result<StatFields, ProcessError> {
     let fields: Vec<&str> = after_comm.split_whitespace().collect();
 
     if fields.len() < 20 {
-        return Err(ProcessError::ParseError("Insufficient stat fields".to_string()));
+        return Err(ProcessError::ParseError(
+            "Insufficient stat fields".to_string(),
+        ));
     }
 
     Ok(StatFields {
@@ -48,8 +50,6 @@ pub fn parse_stat(stat_content: &str) -> Result<StatFields, ProcessError> {
         starttime: fields[19].parse().unwrap_or(0),
         utime: fields[11].parse().unwrap_or(0),
         stime: fields[12].parse().unwrap_or(0),
-        cutime: fields[13].parse().unwrap_or(0),
-        cstime: fields[14].parse().unwrap_or(0),
     })
 }
 
