@@ -1,4 +1,5 @@
-use crossterm::event::{self, Event as CrosstermEvent, KeyCode, KeyEvent};
+use crate::app::InputMode;
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent};
 use std::time::Duration;
 use tokio::sync::mpsc;
 
@@ -16,7 +17,7 @@ pub struct EventHandler {
 impl EventHandler {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
-        Self { tx , rx }
+        Self { tx, rx }
     }
 
     pub async fn next(&mut self) -> Option<Event> {
@@ -56,9 +57,19 @@ impl EventHandler {
     }
 }
 
-pub fn map_key_to_action(key: KeyEvent) -> Option<crate::app::Action> {
-    use crate::app::Action;
-    use crossterm::event::KeyCode;
+pub fn map_key_to_action(key: KeyEvent, input_mode: InputMode) -> Option<crate::app::Action> {
+    use crate::app::{Action, InputMode};
+    use crossterm::event::{KeyCode, KeyModifiers};
+
+    if input_mode != InputMode::Normal {
+        match key.code {
+            KeyCode::Enter => return Some(Action::InputSubmit),
+            KeyCode::Esc => return Some(Action::ExitInputMode),
+            KeyCode::Backspace => return Some(Action::InputBackspace),
+            KeyCode::Char(c) => return Some(Action::InputChar(c)),
+            _ => return None,
+        }
+    }
 
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => Some(Action::Quit),
@@ -72,27 +83,35 @@ pub fn map_key_to_action(key: KeyEvent) -> Option<crate::app::Action> {
         KeyCode::Char('5') => Some(Action::SwitchTab(crate::tabs::Tab::Network)),
         KeyCode::Char('6') => Some(Action::SwitchTab(crate::tabs::Tab::Disk)),
         KeyCode::Char('7') => Some(Action::SwitchTab(crate::tabs::Tab::Notifications)),
+        KeyCode::Char('8') => Some(Action::SwitchTab(crate::tabs::Tab::Settings)),
         KeyCode::Up | KeyCode::Char('k') => Some(Action::ScrollUp),
         KeyCode::Down | KeyCode::Char('j') => Some(Action::ScrollDown),
         KeyCode::PageUp => Some(Action::PageUp),
         KeyCode::PageDown => Some(Action::PageDown),
         KeyCode::Home => Some(Action::Home),
         KeyCode::End => Some(Action::End),
-        
+
         KeyCode::Char('K') => Some(Action::KillSelectedProcess),
         KeyCode::Char('s') => Some(Action::SuspendSelectedProcess),
-        KeyCode::Char('c') => Some(Action::ContinueSelectedProcess),
+        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::SHIFT) => {
+            Some(Action::SortByColumn(2))
+        }
+        KeyCode::Char('c') => Some(Action::EnterInputMode(InputMode::EditCpuThreshold)),
+        KeyCode::Char('m') if key.modifiers.contains(KeyModifiers::SHIFT) => {
+            Some(Action::MarkAllNotificationsRead)
+        }
+        KeyCode::Char('m') => Some(Action::EnterInputMode(InputMode::EditMemoryThreshold)),
+        KeyCode::Char('d') => Some(Action::EnterInputMode(InputMode::EditDiskThreshold)),
         KeyCode::Char('t') => Some(Action::TerminateSelectedProcess),
         KeyCode::Char('r') => Some(Action::LoadProcessList),
-        
-        KeyCode::Char('p') => Some(Action::SortByColumn(0)), 
-        KeyCode::Char('n') => Some(Action::SortByColumn(1)), 
-        KeyCode::Char('C') => Some(Action::SortByColumn(2)), 
-        KeyCode::Char('M') => Some(Action::SortByColumn(3)), 
-        
-        KeyCode::Char('m') => Some(Action::MarkAllNotificationsRead),
-        KeyCode::Char('x') => Some(Action::ClearAllNotifications),
-        
+
+        KeyCode::Char('p') => Some(Action::SortByColumn(0)),
+        KeyCode::Char('n') => Some(Action::SortByColumn(1)),
+        KeyCode::Char('M') => Some(Action::SortByColumn(3)),
+
+        KeyCode::Char('/') => Some(Action::EnterInputMode(InputMode::SearchProcess)),
+        KeyCode::Char('x') => Some(Action::ClearFilter),
+
         _ => None,
     }
 }
