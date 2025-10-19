@@ -1,21 +1,17 @@
-use oxyd_domain::{
-    traits::Collector,
-    models::{SystemMetrics,NetworkStats},
-    errors::CollectorError,
-};
-use tokio::fs;
 use async_trait::async_trait;
 use chrono::Utc;
+use oxyd_domain::{
+    errors::CollectorError,
+    models::{NetworkStats, SystemMetrics},
+    traits::Collector,
+};
+use tokio::fs;
 
-pub struct NetworkCollector {
-    interfaces: Vec<String>,
-}
+pub struct NetworkCollector {}
 
 impl NetworkCollector {
     pub fn new() -> Self {
-        Self {
-            interfaces: Vec::new(),
-        }
+        Self {}
     }
 
     async fn parse_net_dev(&self) -> Result<Vec<NetworkStats>, CollectorError> {
@@ -32,7 +28,7 @@ impl NetworkCollector {
             }
 
             let interface = parts[0].trim_end_matches(':').to_string();
-            
+
             if parts.len() >= 17 {
                 stats.push(NetworkStats {
                     interface,
@@ -60,7 +56,7 @@ impl Collector for NetworkCollector {
 
     async fn collect(&self) -> Result<SystemMetrics, CollectorError> {
         let stats = self.parse_net_dev().await?;
-        
+
         let total_bytes_sent = stats.iter().map(|s| s.bytes_sent).sum();
         let total_bytes_received = stats.iter().map(|s| s.bytes_received).sum();
 
