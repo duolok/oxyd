@@ -309,7 +309,7 @@ fn render_process_table(f: &mut Frame, area: Rect, app: &AppState) {
             )
             .style(Style::default().fg(Color::White)),
     )
-    .highlight_style(selected_style)
+    .row_highlight_style(selected_style)
     .highlight_symbol("▶ ");
 
     f.render_widget(table, area);
