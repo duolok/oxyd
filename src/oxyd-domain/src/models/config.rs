@@ -7,11 +7,10 @@ pub struct Config {
     pub collectors: CollectorConfig,
     pub ui: UIConfig,
     pub process_manager: ProcessManagerConfig,
-    pub plugins: PluginConfig,
     pub alerts: AlertConfig,
 }
 
-#[derive(Debug, Clone,Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneralConfig {
     pub update_interval_ms: u64,
     pub history_size: usize,
@@ -21,7 +20,7 @@ pub struct GeneralConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogLevel {
-    Trace, 
+    Trace,
     Debug,
     Info,
     Warn,
@@ -49,7 +48,6 @@ pub struct CpuCollectorConfig {
 pub struct MemoryCollectorConfig {
     pub enabled: bool,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiskCollectorConfig {
@@ -101,14 +99,6 @@ pub struct ProcessManagerConfig {
     pub allow_priority_change: bool,
     pub require_sudo: bool,
     pub protected_processes: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PluginConfig {
-    pub enabled: bool,
-    pub plugin_dir: String,
-    pub auto_load: bool,
-    pub plugins: HashMap<String, PluginSettings>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
