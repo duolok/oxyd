@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(event) = event_handler.next() => {
                 match event {
                     Event::Key(key) => {
-                        if let Some(action) = map_key_to_action(key, app.state.input_mode) {
+                        if let Some(action) = map_key_to_action(key, app.state.input_mode, app.state.current_tab) {
                             let _ = action_tx.send(action);
                         }
                     }
