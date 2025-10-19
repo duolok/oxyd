@@ -106,7 +106,7 @@ fn render_settings_list(f: &mut Frame, area: Rect, app: &AppState) {
             Span::raw("  • CPU:    "),
             if app.last_cpu_alert.is_some() {
                 Span::styled(
-                    "⚠ TRIGGERED",
+                    "TRIGGERED",
                     Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
                 )
             } else {
@@ -117,7 +117,7 @@ fn render_settings_list(f: &mut Frame, area: Rect, app: &AppState) {
             Span::raw("  • Memory: "),
             if app.last_memory_alert.is_some() {
                 Span::styled(
-                    "⚠ TRIGGERED",
+                    "TRIGGERED",
                     Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
                 )
             } else {
