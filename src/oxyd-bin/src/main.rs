@@ -51,7 +51,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let action_tx_clone = action_tx.clone();
-    let pm_clone = process_manager.clone();
     tokio::spawn(async move {
         let _ = action_tx_clone.send(Action::LoadProcessList);
 
