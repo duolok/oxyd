@@ -12,10 +12,10 @@ pub fn render(f: &mut Frame, area: Rect, app: &AppState) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3), // Title
-            Constraint::Min(15),   // Settings list
-            Constraint::Length(5), // Input box
-            Constraint::Length(3), // Instructions
+            Constraint::Length(3),
+            Constraint::Min(15),
+            Constraint::Length(5),
+            Constraint::Length(3),
         ])
         .split(area);
 
