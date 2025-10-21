@@ -21,7 +21,15 @@ Note: Currently only Linux is supported.
 
 ### Installation
 
-Clone the Oxyd repository and navigate into the directory:
+If you prefer using just, run:
+
+```
+just Install
+```
+After that OXYD will be installed system wide, and be available to use.
+
+
+Or you can do it the old fashioned way, clone the Oxyd repository and navigate into the directory:
 
 ```shell
 cargo build --release
