@@ -1,6 +1,11 @@
 ![banner](./res/banner.png)
+
 <h1 align="center"> OXYD </h1>
-[![CI](https://github.com/duolok/oxyd/actions/workflows/ci.yml/badge.svg)](https://github.com/duolok/oxyd/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://github.com/duolok/oxyd/actions/workflows/ci.yml">
+    <img src="https://github.com/duolok/oxyd/actions/workflows/ci.yml/badge.svg" alt="CI Status">
+  </a>
+</p>
 
 Oxyd is a System and Process monitoring tool written with Rust.
 
