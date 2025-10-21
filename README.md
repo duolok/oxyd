@@ -2,8 +2,8 @@
 
 <h1 align="center"> OXYD </h1>
 <p align="center">
-  <a href="https://github.com/duolok/oxyd/actions/workflows/ci.yml">
-    <img src="https://github.com/duolok/oxyd/actions/workflows/ci.yml/badge.svg" alt="CI Status">
+  <a href="https://github.com/duolok/oxyd/actions/workflows/rust.yml">
+    <img src="https://github.com/duolok/oxyd/actions/workflows/rust.yml/badge.svg" alt="CI Status">
   </a>
 </p>
 
