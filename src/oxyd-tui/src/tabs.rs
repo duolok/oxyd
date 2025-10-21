@@ -7,6 +7,7 @@ pub enum Tab {
     Network,
     Disk,
     Notifications,
+    Settings,
 }
 
 impl Tab {
@@ -18,19 +19,21 @@ impl Tab {
             Tab::Processes => Tab::Network,
             Tab::Network => Tab::Disk,
             Tab::Disk => Tab::Notifications,
-            Tab::Notifications => Tab::Overview,
+            Tab::Notifications => Tab::Settings,
+            Tab::Settings => Tab::Overview,
         }
     }
 
     pub fn previous(&self) -> Self {
         match self {
-            Tab::Overview => Tab::Notifications,
+            Tab::Overview => Tab::Settings,
             Tab::Cpu => Tab::Overview,
             Tab::Memory => Tab::Cpu,
             Tab::Processes => Tab::Memory,
             Tab::Network => Tab::Processes,
             Tab::Disk => Tab::Network,
             Tab::Notifications => Tab::Disk,
+            Tab::Settings => Tab::Notifications,
         }
     }
 
@@ -43,6 +46,7 @@ impl Tab {
             Tab::Network => "Network",
             Tab::Disk => "Disk",
             Tab::Notifications => "Notifications",
+            Tab::Settings => "Settings",
         }
     }
 
@@ -55,6 +59,7 @@ impl Tab {
             Tab::Network,
             Tab::Disk,
             Tab::Notifications,
+            Tab::Settings,
         ]
     }
 }

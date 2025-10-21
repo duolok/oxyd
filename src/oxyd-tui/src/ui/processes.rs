@@ -1,22 +1,22 @@
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table},
-    Frame,
 };
 
-use oxyd_domain::models::{SystemMetrics, ProcessState};
-use crate::app::AppState;
 use super::widgets::format_bytes;
+use crate::app::AppState;
+use oxyd_domain::models::{ProcessState, SystemMetrics};
 
 pub fn render(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app: &AppState) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(7),   
-            Constraint::Min(10),     
-            Constraint::Length(3),   
+            Constraint::Length(7),
+            Constraint::Min(10),
+            Constraint::Length(3),
         ])
         .split(area);
 
@@ -27,7 +27,7 @@ pub fn render(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app: &AppState
 
 fn render_process_stats(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app: &AppState) {
     let procs = &metrics.processes;
-    
+
     let sort_info = match app.sort_column {
         0 => "PID",
         1 => "Name",
@@ -37,47 +37,133 @@ fn render_process_stats(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app:
         5 => "User",
         _ => "Unknown",
     };
-    
+
     let sort_direction = if app.sort_ascending { "↑" } else { "↓" };
-    
-    let lines = vec![
+
+    let filter_line = if !app.process_filter.is_empty() {
         Line::from(vec![
-            Span::styled("Total: ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{}", procs.total_count), Style::default().fg(Color::White)),
-            Span::raw("  "),
-            Span::styled("Running: ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{}", procs.running_count), Style::default().fg(Color::Green)),
-            Span::raw("  "),
-            Span::styled("Sleeping: ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{}", procs.sleeping_count), Style::default().fg(Color::Yellow)),
-            Span::raw("  "),
-            Span::styled("Stopped: ", Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{}", procs.stopped_count), Style::default().fg(Color::Magenta)),
-            Span::raw("  "),
-            Span::styled("Zombie: ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{}", procs.zombie_count), Style::default().fg(Color::Red)),
-        ]),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("Showing: ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{}", app.process_list.len()), Style::default().fg(Color::White)),
-            Span::raw(" processes"),
-            Span::raw("    "),
-            Span::styled("Sort: ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{} {}", sort_info, sort_direction), Style::default().fg(Color::Yellow)),
-        ]),
-        Line::from(""),
+            Span::styled(
+                "Filter: ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("'{}' ", app.process_filter),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("(Press 'x' to clear)", Style::default().fg(Color::DarkGray)),
+        ])
+    } else {
         Line::from(vec![
             Span::styled("Press ", Style::default().fg(Color::DarkGray)),
-            Span::styled("?", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-            Span::styled(" for help", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                "/",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                " to search/filter processes",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ])
+    };
+
+    let lines = vec![
+        Line::from(vec![
+            Span::styled(
+                "Total: ",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", procs.total_count),
+                Style::default().fg(Color::White),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                "Running: ",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", procs.running_count),
+                Style::default().fg(Color::Green),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                "Sleeping: ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", procs.sleeping_count),
+                Style::default().fg(Color::Yellow),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                "Stopped: ",
+                Style::default()
+                    .fg(Color::Magenta)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", procs.stopped_count),
+                Style::default().fg(Color::Magenta),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                "Zombie: ",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", procs.zombie_count),
+                Style::default().fg(Color::Red),
+            ),
         ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                "Showing: ",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{}", app.filtered_process_list.len()),
+                Style::default().fg(Color::White),
+            ),
+            Span::raw(" processes"),
+            Span::raw("    "),
+            Span::styled(
+                "Sort: ",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{} {}", sort_info, sort_direction),
+                Style::default().fg(Color::Yellow),
+            ),
+        ]),
+        Line::from(""),
+        filter_line,
     ];
 
     let block = Block::default()
         .borders(Borders::ALL)
         .title(" Process Summary ")
-        .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+        .title_style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
         .style(Style::default().fg(Color::White));
 
     let paragraph = Paragraph::new(lines).block(block);
@@ -86,40 +172,35 @@ fn render_process_stats(f: &mut Frame, area: Rect, metrics: &SystemMetrics, app:
 
 fn render_process_table(f: &mut Frame, area: Rect, app: &AppState) {
     let header_cells = vec![
-        "PID",
-        "Name",
-        "State",
-        "CPU%",
-        "Memory",
-        "Mem%",
-        "User",
-        "Threads",
-        "Priority",
+        "PID", "Name", "State", "CPU%", "Memory", "Mem%", "User", "Threads", "Priority",
     ];
 
     let sort_indicator = if app.sort_ascending { " ▲" } else { " ▼" };
-    
-    let header = Row::new(
-        header_cells.iter().enumerate().map(|(i, h)| {
-            let text = if i == app.sort_column {
-                format!("{}{}", h, sort_indicator)
-            } else {
-                h.to_string()
-            };
-            Cell::from(text).style(
-                Style::default()
-                    .fg(if i == app.sort_column { Color::Yellow } else { Color::Cyan })
-                    .add_modifier(Modifier::BOLD)
-            )
-        })
-    )
+
+    let header = Row::new(header_cells.iter().enumerate().map(|(i, h)| {
+        let text = if i == app.sort_column {
+            format!("{}{}", h, sort_indicator)
+        } else {
+            h.to_string()
+        };
+        Cell::from(text).style(
+            Style::default()
+                .fg(if i == app.sort_column {
+                    Color::Yellow
+                } else {
+                    Color::Cyan
+                })
+                .add_modifier(Modifier::BOLD),
+        )
+    }))
     .height(1)
     .bottom_margin(1);
 
     let table_height = area.height.saturating_sub(4) as usize;
     let visible_start = app.scroll_offset;
 
-    let rows: Vec<Row> = app.process_list
+    let rows: Vec<Row> = app
+        .filtered_process_list
         .iter()
         .enumerate()
         .skip(visible_start)
@@ -127,7 +208,7 @@ fn render_process_table(f: &mut Frame, area: Rect, app: &AppState) {
         .map(|(i, process)| {
             let actual_index = visible_start + i;
             let is_selected = app.selected_process == Some(actual_index);
-            
+
             let state_str = match process.state {
                 ProcessState::Running => "RUN",
                 ProcessState::Sleeping => "SLP",
@@ -192,7 +273,7 @@ fn render_process_table(f: &mut Frame, area: Rect, app: &AppState) {
     let rows = if rows.is_empty() {
         vec![Row::new(vec![
             Cell::from("No processes loaded. Press 'r' to refresh.")
-                .style(Style::default().fg(Color::DarkGray))
+                .style(Style::default().fg(Color::DarkGray)),
         ])]
     } else {
         rows
@@ -205,15 +286,15 @@ fn render_process_table(f: &mut Frame, area: Rect, app: &AppState) {
     let table = Table::new(
         rows,
         vec![
-            Constraint::Length(8),   // pID
-            Constraint::Min(20),     // name
-            Constraint::Length(6),   // state
-            Constraint::Length(8),   // cPU
-            Constraint::Length(10),  // memory bytes
-            Constraint::Length(8),   // memory %
-            Constraint::Length(12),  // user
-            Constraint::Length(8),   // threads
-            Constraint::Length(9),   // priority
+            Constraint::Length(8),  // pID
+            Constraint::Min(20),    // name
+            Constraint::Length(6),  // state
+            Constraint::Length(8),  // cPU
+            Constraint::Length(10), // memory bytes
+            Constraint::Length(8),  // memory %
+            Constraint::Length(12), // user
+            Constraint::Length(8),  // threads
+            Constraint::Length(9),  // priority
         ],
     )
     .header(header)
@@ -221,10 +302,14 @@ fn render_process_table(f: &mut Frame, area: Rect, app: &AppState) {
         Block::default()
             .borders(Borders::ALL)
             .title(format!(" Process List ({} total) ", app.process_list.len()))
-            .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .title_style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .style(Style::default().fg(Color::White)),
     )
-    .highlight_style(selected_style)
+    .row_highlight_style(selected_style)
     .highlight_symbol("▶ ");
 
     f.render_widget(table, area);
@@ -266,7 +351,11 @@ fn render_status_bar(f: &mut Frame, area: Rect, app: &AppState) {
             Block::default()
                 .borders(Borders::ALL)
                 .title(" Status ")
-                .title_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+                .title_style(
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ),
         )
         .style(style);
 

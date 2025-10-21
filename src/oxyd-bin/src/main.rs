@@ -5,8 +5,8 @@ use crossterm::{
 };
 use oxyd_collectors::UnifiedCollector;
 use oxyd_core::engine::Engine;
-use oxyd_tui::{App, Event, EventHandler, event::map_key_to_action, app::Action};
-use oxyd_domain::{ProcessSignal, traits::ProcessManager};
+use oxyd_domain::{traits::ProcessManager, ProcessSignal};
+use oxyd_tui::{app::Action, event::map_key_to_action, App, Event, EventHandler};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::sync::Arc;
@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let engine = Engine::new_default();
     let process_manager = engine.process_manager().clone();
-    
+
     let collector = UnifiedCollector::new(process_manager.clone(), true);
     engine.add_collector(Box::new(collector)).await;
 
@@ -51,10 +51,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let action_tx_clone = action_tx.clone();
-    let pm_clone = process_manager.clone();
     tokio::spawn(async move {
         let _ = action_tx_clone.send(Action::LoadProcessList);
-        
+
         let mut interval = interval(Duration::from_secs(3));
         loop {
             interval.tick().await;
@@ -73,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(event) = event_handler.next() => {
                 match event {
                     Event::Key(key) => {
-                        if let Some(action) = map_key_to_action(key) {
+                        if let Some(action) = map_key_to_action(key, app.state.input_mode, app.state.current_tab) {
                             let _ = action_tx.send(action);
                         }
                     }
@@ -108,7 +107,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             let name = process.name.clone();
                             let pm = process_manager.clone();
                             let tx = action_tx.clone();
-                            
+
                             tokio::spawn(async move {
                                 match pm.kill_process(pid).await {
                                     Ok(_) => {
@@ -132,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             let name = process.name.clone();
                             let pm = process_manager.clone();
                             let tx = action_tx.clone();
-                            
+
                             tokio::spawn(async move {
                                 match pm.suspend_process(pid).await {
                                     Ok(_) => {
@@ -156,7 +155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             let name = process.name.clone();
                             let pm = process_manager.clone();
                             let tx = action_tx.clone();
-                            
+
                             tokio::spawn(async move {
                                 match pm.continue_process(pid).await {
                                     Ok(_) => {
@@ -180,7 +179,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             let name = process.name.clone();
                             let pm = process_manager.clone();
                             let tx = action_tx.clone();
-                            
+
                             tokio::spawn(async move {
                                 match pm.send_signal(pid, ProcessSignal::Terminate).await {
                                     Ok(_) => {
@@ -202,7 +201,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 app.dispatch(action);
-                
+
                 if app.should_quit() {
                     break;
                 }
@@ -225,21 +224,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn load_process_list(
-    process_manager: Arc<dyn ProcessManager>
+    process_manager: Arc<dyn ProcessManager>,
 ) -> Result<Vec<oxyd_domain::models::Process>, Box<dyn std::error::Error>> {
     let pids = process_manager.list_processes().await?;
-    
+
     let mut processes = Vec::new();
-    
+
     for pid in pids.iter().take(500) {
         if let Ok(process) = process_manager.get_process(*pid).await {
             processes.push(process);
         }
     }
-    
+
     processes.sort_by(|a, b| {
-        b.cpu_usage_percent.partial_cmp(&a.cpu_usage_percent).unwrap()
+        b.cpu_usage_percent
+            .partial_cmp(&a.cpu_usage_percent)
+            .unwrap()
     });
-    
+
     Ok(processes)
 }
